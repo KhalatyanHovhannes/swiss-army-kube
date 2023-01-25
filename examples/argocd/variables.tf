@@ -23,7 +23,7 @@ variable "single_nat" {
 }
 
 variable "cluster_name" {
-  default     = "swiss-army-kube"
+  default     = "swisskubehovo"
   type        = string
   description = "A name of the Amazon EKS cluster"
 }
@@ -47,13 +47,13 @@ variable "environment" {
 }
 
 variable "project" {
-  default     = "SWISS"
+  default     = "SWISSHOVO"
   type        = string
   description = "A value that will be used in annotations and tags to identify resources with the `Project` key"
 }
 
 variable "domain_name" {
-  default     = "swiss.sak.ninja"
+  default     = "swiss.sak.agent"
   type        = string
   description = "Default domain name"
 }
@@ -61,8 +61,8 @@ variable "domain_name" {
 variable "argocd" {
   default = {
     repository = "swiss-army-kube"
-    branch     = "master"
-    owner      = "provectus"
+    branch     = "argocd_test_Hovhannes"
+    owner      = "KhalatyanHovhannes"
   }
   type        = map(string)
   description = "A set of values for enabling deployment through ArgoCD"
