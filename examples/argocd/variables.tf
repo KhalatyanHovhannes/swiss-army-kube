@@ -106,3 +106,9 @@ variable "cloudwatch_cluster_log_retention_days" {
   description = "logs retention period in days (1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653, 0). 0 means logs will never expire."
   default     = 90
 }
+
+variable "zone_id" {
+  default     = "Z04917561CQAI9UAF27D6"
+  type        = string
+  description = "Default zone id for root domain" #like Z04917561CQAI9UAF27D6
+}
