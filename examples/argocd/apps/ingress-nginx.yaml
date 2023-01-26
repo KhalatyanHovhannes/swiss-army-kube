@@ -16,8 +16,6 @@
         "value": "environment=dev,project=SWISSHOVO"
       - "name": "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol"
         "value": "http"
-      - "name": "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"
-        "value": "arn:aws:acm:eu-north-1:641456973426:certificate/a73031f2-e5ee-4ecc-9a73-e0b5658608fc"
       - "name": "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"
         "value": "https"
       - "name": "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"

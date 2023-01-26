@@ -173,7 +173,7 @@ module "nginx-ingress" {
   conf = {
     "controller.service.targetPorts.http"                                                                = "http"
     "controller.service.targetPorts.https"                                                               = "http"
-    "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"         = "arn:aws:acm:eu-north-1:641456973426:certificate/a73031f2-e5ee-4ecc-9a73-e0b5658608fc" #module.clusterwide.this_acm_certificate_arn
+    #"controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"         = "arn:aws:acm:eu-north-1:641456973426:certificate/a73031f2-e5ee-4ecc-9a73-e0b5658608fc" #module.clusterwide.this_acm_certificate_arn
     "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol" = "http"
     "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"        = "https"
   }
