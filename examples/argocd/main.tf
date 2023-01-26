@@ -168,7 +168,6 @@ module "argocd" {
 module "nginx-ingress" {
   #depends_on   = [module.clusterwide]
   source       = "github.com/provectus/sak-nginx"
-  #cluster_name = module.kubernetes.cluster_name
   argocd       = module.argocd.state
   conf = {
     "controller.service.targetPorts.http"                                                                = "http"
