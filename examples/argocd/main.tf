@@ -7,6 +7,12 @@ data "aws_eks_cluster_auth" "cluster" {
 }
 data "aws_availability_zones" "available" {}
 
+data "aws_route53_zone" "this" {
+  # name         = "edu.provectus.io."
+  zone_id      = var.zone_id
+  private_zone = false
+}
+
 locals {
   tags = {
     environment = local.environment
@@ -177,4 +183,14 @@ module "nginx-ingress" {
     "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"        = "https"
   }
   tags = local.tags
+}
+module "external_dns" {
+  depends_on = [module.argocd]
+
+  source       = "/Users/hovhannes/Documents/Work/Provectus/sak-external-dns"
+  cluster_name = module.eks.cluster_id
+  argocd       = module.argocd.state
+  mainzoneid   = data.aws_route53_zone.this.zone_id
+  hostedzones  = local.domain
+  tags         = local.tags
 }
