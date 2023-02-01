@@ -173,7 +173,7 @@ module "argocd" {
 }
 module "nginx-ingress" {
   #depends_on   = [module.clusterwide]
-  source       = "github.com/provectus/sak-nginx"
+  source       = "/Users/hovhannes/Documents/Work/Provectus/sak-nginx"
   argocd       = module.argocd.state
   conf = {
     "controller.service.targetPorts.http"                                                                = "http"
@@ -193,4 +193,12 @@ module "external_dns" {
   mainzoneid   = data.aws_route53_zone.this.zone_id
   hostedzones  = local.domain
   tags         = local.tags
+}
+module "prometheus" {
+  depends_on      = [module.argocd]
+  source          = "/Users/hovhannes/Documents/Work/Provectus/sak-prometheus"
+  cluster_name    = module.eks.cluster_id
+  argocd          = module.argocd.state
+  domains         = local.domain
+  tags            = local.tags
 }
