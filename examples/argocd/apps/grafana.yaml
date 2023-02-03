@@ -13,7 +13,7 @@
     "helm":
       "parameters":
       - "name": "adminPassword"
-        "value": "KMS_ENC:AQICAHg5n5ZsRAdclBBOIpye+jacEK6Dkyl79HHRUwM/wromDgHsWxgYwhbShcQXFP1gS5l/AAAAbjBsBgkqhkiG9w0BBwagXzBdAgEAMFgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMlyvJkeg+mFBXP5kVAgEQgCt39MF7e43EkMQRL9TPshK3PA/oSfRsgb71wpnKolzTdgdoSIB78TnpqK6l:"
+        "value": "KMS_ENC:AQICAHgUUaAn0r3F2M676qtpgttN2yijQHFs5TbTMr/IXmpG9wHf5ZC0hbDnFXYrBS167uRNAAAAbjBsBgkqhkiG9w0BBwagXzBdAgEAMFgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMxxGwyZG5gwjFjzBaAgEQgCtSjEeW4wBrLsGYDllCSTyX/ofw2YAMov9oK3lATvk29WY8cG3pkt2WbuJF:"
       - "name": "env.GF_AUTH_GOOGLE_ALLOWED_DOMAINS"
         "value": "local"
       - "name": "env.GF_AUTH_GOOGLE_CLIENT_ID"

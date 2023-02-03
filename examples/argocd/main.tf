@@ -202,3 +202,10 @@ module "prometheus" {
   domains         = local.domain
   tags            = local.tags
 }
+module scaling {
+  source          = "/Users/hovhannes/Documents/Work/Provectus/sak-scaling"
+  cluster_name    = module.eks.cluster_id
+  cluster_version = "1.22"
+  namespace       = "kube-system"
+  argocd          = module.argocd.state
+}
