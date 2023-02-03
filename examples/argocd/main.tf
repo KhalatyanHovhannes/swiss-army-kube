@@ -154,7 +154,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 
 module "argocd" {
   depends_on = [module.vpc.vpc_id, module.eks.cluster_id, data.aws_eks_cluster.cluster]
-  source     = "github.com/provectus/sak-argocd"
+  source     = "/Users/hovhannes/Documents/Work/Provectus/sak-argocd"
 
   branch       = var.argocd.branch
   owner        = var.argocd.owner
@@ -193,19 +193,4 @@ module "external_dns" {
   mainzoneid   = data.aws_route53_zone.this.zone_id
   hostedzones  = local.domain
   tags         = local.tags
-}
-module "prometheus" {
-  depends_on      = [module.argocd]
-  source          = "/Users/hovhannes/Documents/Work/Provectus/sak-prometheus"
-  cluster_name    = module.eks.cluster_id
-  argocd          = module.argocd.state
-  domains         = local.domain
-  tags            = local.tags
-}
-module scaling {
-  source          = "/Users/hovhannes/Documents/Work/Provectus/sak-scaling"
-  cluster_name    = module.eks.cluster_id
-  cluster_version = "1.22"
-  namespace       = "kube-system"
-  argocd          = module.argocd.state
 }
