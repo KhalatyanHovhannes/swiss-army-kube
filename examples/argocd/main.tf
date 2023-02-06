@@ -194,3 +194,15 @@ module "external_dns" {
   hostedzones  = local.domain
   tags         = local.tags
 }
+
+module oauth {
+  depends_on     = [module.argocd]
+  source         = "/Users/hovhannes/Documents/Work/Provectus/sak-oauth"
+  cluster_name   = module.eks.cluster_id
+  namespace_name = "oauth"
+  domains        = local.domain
+  argocd         = module.argocd.state
+  client_id      = "exampleid"
+  client_secret  = "examplesecret"
+  cookie_secret  = "examplecookie"
+}

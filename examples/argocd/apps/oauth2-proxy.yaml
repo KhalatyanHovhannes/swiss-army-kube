@@ -1,0 +1,44 @@
+"apiVersion": "argoproj.io/v1alpha1"
+"kind": "Application"
+"metadata":
+  "name": "oauth2-proxy"
+  "namespace": "argocd"
+"spec":
+  "destination":
+    "namespace": "oauth"
+    "server": "https://kubernetes.default.svc"
+  "project": "default"
+  "source":
+    "chart": "oauth2-proxy"
+    "helm":
+      "parameters":
+      - "name": "config.existingSecret"
+        "value": "oauth2-proxy-secret"
+      - "name": "extraArgs.cookie-domain"
+        "value": ".swisskubehovo.swiss.sak.agent"
+      - "name": "extraArgs.whitelist-domain"
+        "value": ".swisskubehovo.swiss.sak.agent"
+      - "name": "ingress.enabled"
+        "value": "true"
+      - "name": "ingress.hosts[0]"
+        "value": "oauth2.swisskubehovo.swiss.sak.agent"
+      - "name": "ingress.tls[0].hosts[0]"
+        "value": "oauth2.swisskubehovo.swiss.sak.agent"
+      - "name": "ingress.tls[0].secretName"
+        "value": "oauth-tls"
+      - "name": "rbac.create"
+        "value": "true"
+      - "name": "resources.limits.cpu"
+        "value": "100m"
+      - "name": "resources.limits.memory"
+        "value": "300Mi"
+      - "name": "resources.requests.cpu"
+        "value": "100m"
+      - "name": "resources.requests.memory"
+        "value": "300Mi"
+    "repoURL": "https://charts.helm.sh/stable"
+    "targetRevision": "3.1.0"
+  "syncPolicy":
+    "automated":
+      "prune": true
+      "selfHeal": true
