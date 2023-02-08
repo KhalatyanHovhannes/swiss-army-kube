@@ -206,3 +206,11 @@ module oauth {
   client_secret  = "examplesecret"
   cookie_secret  = "examplecookie"
 }
+
+module "alb-ingress" {
+  depends_on   = [module.argocd]
+  source       = "/Users/hovhannes/Documents/Work/Provectus/sak-alb-controller"
+  cluster_name = module.eks.cluster_id
+  vpc_id       = module.vpc.vpc_id
+  argocd       = module.argocd.state
+}
