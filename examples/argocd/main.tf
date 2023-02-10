@@ -231,3 +231,11 @@ module external_secrets {
   cluster_name      = module.eks.cluster_id
   cluster_oidc_url  = module.eks.cluster_oidc_issuer_url
 }
+
+module "loki" {
+  module_depends_on = [module.argocd]
+  source            = "/Users/hovhannes/Documents/Work/Provectus/sak-loki"
+  cluster_name      = module.eks.cluster_id
+  argocd            = module.argocd.state
+  domains           = local.domain
+}

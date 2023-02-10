@@ -1,0 +1,48 @@
+"apiVersion": "argoproj.io/v1alpha1"
+"kind": "Application"
+"metadata":
+  "name": "loki-stack"
+  "namespace": "argocd"
+"spec":
+  "destination":
+    "namespace": "logging"
+    "server": "https://kubernetes.default.svc"
+  "project": "default"
+  "source":
+    "chart": "loki-stack"
+    "helm":
+      "parameters":
+      - "name": "fluent-bit.enabled"
+        "value": "false"
+      - "name": "grafana.adminPassword"
+        "value": "KMS_ENC:AQICAHgVB2ffEiASEetceBDnOHLYaUdOrJf7VatvD2cK5aIvIwF8rxnU0xwvWTt6xpFdsTuxAAAAbjBsBgkqhkiG9w0BBwagXzBdAgEAMFgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMZ1QBZkCfGvLah9bpAgEQgCv/zx32p/rEq5nIvVCOzTr89XTYiAltaNj2QSvN7iCTn5RW9A6g8MgTMJ34:"
+      - "name": "grafana.enabled"
+        "value": "true"
+      - "name": "grafana.ingress.enabled"
+        "value": "true"
+      - "name": "grafana.ingress.hosts[0]"
+        "value": "grafana-loki.swisskubehovo.swiss.sak.agent"
+      - "name": "grafana.persistence.enabled"
+        "value": "true"
+      - "name": "grafana.persistence.size"
+        "value": "1Gi"
+      - "name": "grafana.sidecar.datasources.enabled"
+        "value": "true"
+      - "name": "loki.enabled"
+        "value": "true"
+      - "name": "loki.persistence.enabled"
+        "value": "true"
+      - "name": "loki.persistence.size"
+        "value": "10Gi"
+      - "name": "prometheus.enabled"
+        "value": "false"
+      - "name": "promtail.enabled"
+        "value": "true"
+    "repoURL": "https://grafana.github.io/helm-charts"
+    "targetRevision": "2.3.1"
+  "syncPolicy":
+    "automated":
+      "prune": true
+      "selfHeal": true
+    "syncOptions":
+    - "CreateNamespace=true"
