@@ -4,7 +4,7 @@
   "name": "letsencrypt-prod"
 "spec":
   "acme":
-    "email": "your@email.com"
+    "email": "hkhalatyan@provectus.com"
     "privateKeySecretRef":
       "name": "letsencrypt-prod"
     "server": "https://acme-v02.api.letsencrypt.org/directory"

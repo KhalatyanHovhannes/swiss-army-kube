@@ -220,8 +220,14 @@ module "cert-manager" {
   source       = "/Users/hovhannes/Documents/Work/Provectus/sak-cert-manager"
   cluster_name = module.eks.cluster_id
   argocd       = module.argocd.state
-  email        = "your@email.com"
+  email        = "hkhalatyan@provectus.com"
   zone_id      = data.aws_route53_zone.this.zone_id
   vpc_id       = module.vpc.vpc_id
   domains      = local.domain
+}
+module external_secrets {
+  source            = "/Users/hovhannes/Documents/Work/Provectus/sak-external-secrets"
+  argocd            = module.argocd.state
+  cluster_name      = module.eks.cluster_id
+  cluster_oidc_url  = module.eks.cluster_oidc_issuer_url
 }

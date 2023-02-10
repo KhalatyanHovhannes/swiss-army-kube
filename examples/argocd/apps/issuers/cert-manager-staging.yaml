@@ -4,7 +4,7 @@
   "name": "letsencrypt-staging"
 "spec":
   "acme":
-    "email": "your@email.com"
+    "email": "hkhalatyan@provectus.com"
     "privateKeySecretRef":
       "name": "letsencrypt-staging"
     "server": "https://acme-staging-v02.api.letsencrypt.org/directory"
