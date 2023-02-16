@@ -151,7 +151,6 @@ resource "aws_iam_openid_connect_provider" "cluster" {
   url             = module.eks.cluster_oidc_issuer_url
 }
 
-
 module "argocd" {
   depends_on = [module.vpc.vpc_id, module.eks.cluster_id, data.aws_eks_cluster.cluster]
   source     = "/Users/hovhannes/Documents/Work/Provectus/sak-argocd"
@@ -238,4 +237,261 @@ module "loki" {
   cluster_name      = module.eks.cluster_id
   argocd            = module.argocd.state
   domains           = local.domain
+}
+
+###################################################################################
+/*
+module acm {
+  source  = "terraform-aws-modules/acm/aws"
+  version = "~> v2.0"
+
+  domain_name               = var.domain_name
+  subject_alternative_names = ["*.${var.domain_name}"]
+  zone_id                   = module.external_dns.zone_id
+  validate_certificate      = false
+  tags                      = local.tags
+}
+module kubeflow {
+  source = "/Users/hovhannes/Documents/Work/Provectus/sak-kubeflow"
+  cluster_name = module.eks.cluster_id
+
+  ingress_annotations = {
+    "kubernetes.io/ingress.class"               = "alb"
+    "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
+    "alb.ingress.kubernetes.io/certificate-arn" = module.acm.this_acm_certificate_arn
+    "alb.ingress.kubernetes.io/auth-type"       = "cognito"
+    "alb.ingress.kubernetes.io/auth-idp-cognito" = jsonencode({
+      "UserPoolArn"      = module.cognito.pool_arn
+      "UserPoolClientId" = aws_cognito_user_pool_client.this.id
+      "UserPoolDomain"   = module.cognito.domain
+    })
+    "alb.ingress.kubernetes.io/listen-ports" = jsonencode(
+      [{ "HTTPS" = 443 }]
+    )
+  }
+  domain = "kubeflow.${local.domain}"
+  argocd = module.argocd.state
+}
+
+module cluster_autoscaler {
+  source            = "git::https://github.com/provectus/swiss-army-kube.git//modules/system/cluster-autoscaler?ref=feature/argocd"
+  image_tag         = "v1.15.7"
+  cluster_name      = module.eks.cluster_name
+  module_depends_on = [module.eks]
+  argocd            = module.argocd.state
+}
+
+module "cognito" {
+  source       = "/Users/hovhannes/Documents/Work/Provectus/sak-cognito"
+  cluster_name = module.eks.cluster_id
+  domain       = "hovoexample.com"
+  zone_id      = "Z077774642JFDT3T2B1Z"
+}
+
+resource aws_cognito_user_pool_client "kubeflow" {
+  name                                 = "kubeflow"
+  user_pool_id                         = module.cognito.pool_id
+  callback_urls                        = ["https://kubeflow.hovoexample.com/oauth2/idpresponse"]
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_scopes                 = ["email", "openid", "profile", "aws.cognito.signin.user.admin"]
+  allowed_oauth_flows                  = ["code"]
+  supported_identity_providers         = ["COGNITO"]
+  generate_secret                      = true
+}
+resource aws_cognito_user_pool_client "argocd" {
+  name                                 = "argocd"
+  user_pool_id                         = module.cognito.pool_id
+  callback_urls                        = ["https://argocd.hovoexample.com/auth/callback"]
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_scopes                 = ["openid", "profile", "email"]
+  allowed_oauth_flows                  = ["code"]
+  supported_identity_providers         = ["COGNITO"]
+  generate_secret                      = true
+}
+
+resource "aws_cognito_user_group" "this" {
+  for_each = toset(distinct(values(
+    {
+      for k, v in var.cognito_users :
+      k => lookup(v, "group", "read-only")
+    }
+  )))
+  name         = each.value
+  user_pool_id = module.cognito.pool_id
+}
+
+resource "null_resource" "cognito_users" {
+  depends_on = [module.cognito.pool_id, aws_cognito_user_group.this]
+  for_each = {
+    for k, v in var.cognito_users :
+    format("%s:%s:%s", var.region, module.cognito.pool_id, v.username) => v
+
+  }
+  provisioner "local-exec" {
+    command = "aws --region ${element(split(":", each.key), 0)} cognito-idp admin-create-user --user-pool-id ${element(split(":", each.key), 1)} --username ${element(split(":", each.key), 2)} --user-attributes Name=email,Value=${each.value.email}"
+  }
+  provisioner "local-exec" {
+    command = "aws --region ${element(split(":", each.key), 0)} cognito-idp admin-add-user-to-group --user-pool-id ${element(split(":", each.key), 1)} --username ${element(split(":", each.key), 2)} --group-name ${lookup(each.value, "group", "read-only")}"
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = "aws --region ${element(split(":", each.key), 0)} cognito-idp admin-delete-user --user-pool-id ${element(split(":", each.key), 1)} --username ${element(split(":", each.key), 2)}"
+  }
+}
+*/
+
+module "efk" {
+  depends_on = [module.argocd]
+  source            = "/Users/hovhannes/Documents/Work/Provectus/sak-efk"
+  cluster_name      = module.eks.cluster_id
+  argocd            = module.argocd.state
+  domains           = local.domain
+  kibana_conf       = {
+    "ingress.annotations.kubernetes\\.io/ingress\\.class" = "nginx"
+    "ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/auth-url"    = "https://auth.example.com/oauth2/auth"
+    "ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/auth-signin" = "https://auth.example.com/oauth2/sign_in?rd=https://$host$request_uri"
+  }
+  filebeat_conf = {
+    "setup.kibana" = {
+      "host" = "https://kibana.example.com:443"
+    },
+    "setup.dashboards.enabled" = true,
+    "setup.template.enabled"   = true,
+    "setup.template.name"      = "filebeat",
+    "setup.template.pattern"   = "filebeat-*",
+    "setup.template.settings" = {
+      "index.number_of_shards" = 1
+    },
+    "setup.ilm.enabled"      = "auto",
+    "setup.ilm.check_exists" = false,
+    "setup.ilm.overwrite"    = true,
+    "filebeat.modules" = [
+      {
+        "module" = "system",
+        "syslog" = {
+          "enabled" = true
+        },
+        "auth" = {
+          "enabled" = true
+        }
+      }
+    ],
+    "filebeat.inputs" = [
+      {
+        "type" = "container",
+        "paths" = [
+          "/var/log/containers/*.log"
+        ],
+        "stream" = "all",
+        "processors" = [
+          {
+            "add_kubernetes_metadata" = {
+              "host" = "$${NODE_NAME}",
+              "matchers" = [
+                {
+                  "logs_path" = {
+                    "logs_path" = "/var/log/containers/"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "filebeat.autodiscover" = {
+      "providers" = [
+        {
+          "type"          = "kubernetes",
+          "hints.enabled" = true,
+          "templates" = [
+            {
+              "condition.equals" = {
+                "kubernetes.labels.logging" = true
+              },
+              "config" = [
+                {
+                  "type" = "container",
+                  "paths" = [
+                    "/var/log/containers/*-$${data.kubernetes.container.id}.log"
+                  ],
+                  "exclude_lines" = [
+                    "^\\s+[\\-`('.|_]"
+                  ]
+                }
+              ]
+            },
+            {
+              "condition.equals" = {
+                "kubernetes.labels.logtype" = "nginx"
+              },
+              "config" = [
+                {
+                  "module" = "nginx",
+                  "access" = {
+                    "enabled" = true,
+                    "var.paths" = [
+                      "/var/log/nginx/access.log*"
+                    ]
+                  },
+                  "error" = {
+                    "enabled" = true,
+                    "var.paths" = [
+                      "/var/log/nginx/error.log*"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "processors" = [
+      {
+        "add_cloud_metadata" = null
+      },
+      {
+        "decode_json_fields" = {
+          "fields" = [
+            "message"
+          ],
+          "process_array"  = false,
+          "max_depth"      = 1,
+          "target"         = "",
+          "overwrite_keys" = true,
+          "add_error_key"  = true
+        }
+      },
+      {
+        "drop_event" = {
+          "when" = {
+            "not" = {
+              "contains" = {
+                "kubernetes.pod.labels.logging" = "true"
+              }
+            }
+          }
+        }
+      },
+      {
+        "drop_event" = {
+          "when" = {
+            "regexp" = {
+              "message" = "(?i)kube-probe/1.18+"
+            }
+          }
+        }
+      },
+      {
+        "drop_event" = {
+          "when" = {
+            "regexp" = {
+              "message" = "(?i)ELB-HealthChecker/2.0"
+            }
+          }
+        }
+      }
+    ]
+  }
 }

@@ -39,6 +39,10 @@ variable "availability_zones" {
   type        = list(any)
   description = "Availability zones for project"
 }
+variable cognito_users {
+  type    = list(map(string))
+  default = [{username = "hkhalatyan@provectus.com"}]
+}
 
 variable "environment" {
   default     = "dev"
