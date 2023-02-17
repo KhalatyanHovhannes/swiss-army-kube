@@ -224,118 +224,43 @@ module "cert-manager" {
   vpc_id       = module.vpc.vpc_id
   domains      = local.domain
 }
-module external_secrets {
-  source            = "/Users/hovhannes/Documents/Work/Provectus/sak-external-secrets"
-  argocd            = module.argocd.state
-  cluster_name      = module.eks.cluster_id
-  cluster_oidc_url  = module.eks.cluster_oidc_issuer_url
-}
-
-module "loki" {
-  module_depends_on = [module.argocd]
-  source            = "/Users/hovhannes/Documents/Work/Provectus/sak-loki"
-  cluster_name      = module.eks.cluster_id
-  argocd            = module.argocd.state
-  domains           = local.domain
-}
-
-###################################################################################
 /*
-module acm {
-  source  = "terraform-aws-modules/acm/aws"
-  version = "~> v2.0"
-
-  domain_name               = var.domain_name
-  subject_alternative_names = ["*.${var.domain_name}"]
-  zone_id                   = module.external_dns.zone_id
-  validate_certificate      = false
-  tags                      = local.tags
-}
-module kubeflow {
+module "sak_kubeflow" {
   source = "/Users/hovhannes/Documents/Work/Provectus/sak-kubeflow"
-  cluster_name = module.eks.cluster_id
 
-  ingress_annotations = {
-    "kubernetes.io/ingress.class"               = "alb"
-    "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
-    "alb.ingress.kubernetes.io/certificate-arn" = module.acm.this_acm_certificate_arn
-    "alb.ingress.kubernetes.io/auth-type"       = "cognito"
-    "alb.ingress.kubernetes.io/auth-idp-cognito" = jsonencode({
-      "UserPoolArn"      = module.cognito.pool_arn
-      "UserPoolClientId" = aws_cognito_user_pool_client.this.id
-      "UserPoolDomain"   = module.cognito.domain
-    })
-    "alb.ingress.kubernetes.io/listen-ports" = jsonencode(
-      [{ "HTTPS" = 443 }]
-    )
-  }
-  domain = "kubeflow.${local.domain}"
-  argocd = module.argocd.state
-}
+  cluster_name = module.eks.cluster_name
 
-module cluster_autoscaler {
-  source            = "git::https://github.com/provectus/swiss-army-kube.git//modules/system/cluster-autoscaler?ref=feature/argocd"
-  image_tag         = "v1.15.7"
-  cluster_name      = module.eks.cluster_name
-  module_depends_on = [module.eks]
-  argocd            = module.argocd.state
-}
+  owner      = "hovhannes"
+  repository = "sak-kubeflow"
+  branch     = "init"
 
-module "cognito" {
-  source       = "/Users/hovhannes/Documents/Work/Provectus/sak-cognito"
-  cluster_name = module.eks.cluster_id
-  domain       = "hovoexample.com"
-  zone_id      = "Z077774642JFDT3T2B1Z"
-}
+  #Main route53 zone id if exist (Change It)
+  mainzoneid = "Z077774642JFDT3T2B1Z"
 
-resource aws_cognito_user_pool_client "kubeflow" {
-  name                                 = "kubeflow"
-  user_pool_id                         = module.cognito.pool_id
-  callback_urls                        = ["https://kubeflow.hovoexample.com/oauth2/idpresponse"]
-  allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_scopes                 = ["email", "openid", "profile", "aws.cognito.signin.user.admin"]
-  allowed_oauth_flows                  = ["code"]
-  supported_identity_providers         = ["COGNITO"]
-  generate_secret                      = true
-}
-resource aws_cognito_user_pool_client "argocd" {
-  name                                 = "argocd"
-  user_pool_id                         = module.cognito.pool_id
-  callback_urls                        = ["https://argocd.hovoexample.com/auth/callback"]
-  allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_scopes                 = ["openid", "profile", "email"]
-  allowed_oauth_flows                  = ["code"]
-  supported_identity_providers         = ["COGNITO"]
-  generate_secret                      = true
-}
+  # Name of domains (create route53 zone and ingress). Set as array, first main ingress fqdn ["example.com", "example.io"]
+  domains = local.domain
 
-resource "aws_cognito_user_group" "this" {
-  for_each = toset(distinct(values(
+  # ARNs of users which would have admin permissions. (Change It)
+  admin_arns = [
     {
-      for k, v in var.cognito_users :
-      k => lookup(v, "group", "read-only")
+      userarn  = "arn:aws:iam::xxxxxxxxxxxx:user/rxxxxxxxv"
+      username = "hkhalatyan"
+      groups   = ["system:masters"]
     }
-  )))
-  name         = each.value
-  user_pool_id = module.cognito.pool_id
-}
+  ]
 
-resource "null_resource" "cognito_users" {
-  depends_on = [module.cognito.pool_id, aws_cognito_user_group.this]
-  for_each = {
-    for k, v in var.cognito_users :
-    format("%s:%s:%s", var.region, module.cognito.pool_id, v.username) => v
+  # Email that would be used for LetsEncrypt notifications
+  cert_manager_email = "hkhalatyan@provectus.com"
 
-  }
-  provisioner "local-exec" {
-    command = "aws --region ${element(split(":", each.key), 0)} cognito-idp admin-create-user --user-pool-id ${element(split(":", each.key), 1)} --username ${element(split(":", each.key), 2)} --user-attributes Name=email,Value=${each.value.email}"
-  }
-  provisioner "local-exec" {
-    command = "aws --region ${element(split(":", each.key), 0)} cognito-idp admin-add-user-to-group --user-pool-id ${element(split(":", each.key), 1)} --username ${element(split(":", each.key), 2)} --group-name ${lookup(each.value, "group", "read-only")}"
-  }
-  provisioner "local-exec" {
-    when    = destroy
-    command = "aws --region ${element(split(":", each.key), 0)} cognito-idp admin-delete-user --user-pool-id ${element(split(":", each.key), 1)} --username ${element(split(":", each.key), 2)}"
-  }
+  cognito_users = [
+    {
+      email    = "hkhalatyan@provectus.com"
+      username = "hkhalatyan"
+      group    = "administrators"
+    }
+  ]
+
+  argo_path_prefix = "."
+  argo_apps_dir    = "apps"
 }
 */
